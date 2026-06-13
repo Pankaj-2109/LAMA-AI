@@ -1,0 +1,78 @@
+.chatPage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.chatPage .wrapper {
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  scrollbar-width: none;
+}
+
+.chatPage .wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.chatPage .wrapper .chat {
+  width: 70%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px 0 120px;
+}
+
+/* --- Message Row Layout Mechanics --- */
+.messageWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Aligns user bubble and user uploaded images cleanly to the right */
+.messageWrapper.userWrapper {
+  align-items: flex-end;
+}
+
+/* Aligns AI response elements to the left */
+.messageWrapper.aiWrapper {
+  align-items: flex-start;
+}
+
+.chatPage .wrapper .chat p,
+.chatPage .wrapper .chat li {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.chatPage .wrapper .chat .message {
+  width: max-content;     /* Keeps box tight around short text strings */
+  max-width: 75%;         /* Keeps long paragraph blocks from overflowing */
+  padding: 18px 22px;
+  border-radius: 20px;
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+
+.chatPage .wrapper .chat .message.user {
+  background: #2c2937;
+  color: white;
+  margin-left: auto;      /* Locks layout position tightly to the right edge */
+}
+
+.chatPage .wrapper .chat .message:not(.user) {
+  color: white;
+  margin-right: auto;     /* Locks layout position tightly to the left edge */
+}
+
+.chatPage .wrapper .chat img {
+  border-radius: 15px;
+  max-width: 100%;
+}
