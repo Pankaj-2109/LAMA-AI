@@ -13,24 +13,58 @@ import UserChats from "./models/userChats.js";
 
 import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
 
-
 const port = process.env.PORT || 3000;
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS
+//
+// =======================
+// ✅ FIXED CORS (FULL)
+// =======================
+//
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.CLIENT_URL, // production frontend (Vercel)
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+      // allow tools like Postman / server-to-server
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("❌ Blocked by CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
+// handle preflight requests
+app.options("*", cors());
+
+//
+// =======================
+// BODY PARSER
+// =======================
+//
 app.use(express.json());
 
-// ✅ MongoDB connection
+//
+// =======================
+// MONGO DB CONNECTION
+// =======================
+//
 const connect = async () => {
   try {
     console.log("MONGO =", process.env.MONGO);
@@ -41,7 +75,11 @@ const connect = async () => {
   }
 };
 
-// ✅ ImageKit
+//
+// =======================
+// IMAGEKIT SETUP
+// =======================
+//
 const imagekit = new ImageKit({
   urlEndpoint: process.env.IMAGE_KIT_ENDPOINT,
   publicKey: process.env.IMAGE_KIT_PUBLIC_KEY,
@@ -53,10 +91,11 @@ app.get("/api/upload", (req, res) => {
   res.send(result);
 });
 
-
+//
 // =======================
-// ✅ CREATE CHAT
+// CREATE CHAT
 // =======================
+//
 app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
   const userId = req.auth.userId;
   const { text } = req.body;
@@ -97,7 +136,6 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
       );
     }
 
-    // ✅ FIX: always send response
     res.status(201).send(savedChat._id);
   } catch (err) {
     console.log("CHAT ERROR:", err);
@@ -105,17 +143,16 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
   }
 });
 
-
+//
 // =======================
-// ✅ GET USER CHATS (FIXED)
+// GET USER CHATS
 // =======================
+//
 app.get("/api/userchats", ClerkExpressRequireAuth(), async (req, res) => {
   const userId = req.auth.userId;
 
   try {
     const userChats = await UserChats.findOne({ userId });
-
-    // 🔥 FIX: prevent crash when no data exists
     res.status(200).send(userChats?.chats || []);
   } catch (err) {
     console.log("USERCHATS ERROR:", err);
@@ -123,10 +160,11 @@ app.get("/api/userchats", ClerkExpressRequireAuth(), async (req, res) => {
   }
 });
 
-
+//
 // =======================
-// ✅ GET SINGLE CHAT
+// GET SINGLE CHAT
 // =======================
+//
 app.get("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
   const userId = req.auth.userId;
 
@@ -143,10 +181,11 @@ app.get("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
   }
 });
 
-
+//
 // =======================
-// ✅ UPDATE CHAT
+// UPDATE CHAT
 // =======================
+//
 app.put("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
   const userId = req.auth.userId;
   const { question, answer, img } = req.body;
@@ -175,30 +214,33 @@ app.put("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
   }
 });
 
-
+//
 // =======================
-// ❌ ERROR HANDLER
+// ERROR HANDLER
 // =======================
+//
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(401).send("Unauthenticated!");
 });
 
-
+//
 // =======================
-// PRODUCTION BUILD
+// SERVE FRONTEND (PROD)
 // =======================
+//
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
 });
 
-
+//
 // =======================
 // START SERVER
 // =======================
+//
 app.listen(port, () => {
   connect();
-  console.log("Server running on 3000");
+  console.log(`Server running on ${port}`);
 });
