@@ -11,37 +11,48 @@ import mongoose from "mongoose";
 import Chat from "./models/chat.js";
 import UserChats from "./models/userChats.js";
 
-import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
+import { clerkMiddleware, requireAuth,getAuth } from "@clerk/express";
 
 const port = process.env.PORT || 3000;
 const app = express();
+
+// DEBUG
+console.log(
+  "CLERK_SECRET_KEY:",
+  process.env.CLERK_SECRET_KEY
+    ? process.env.CLERK_SECRET_KEY.slice(0, 10) + "..."
+    : "MISSING"
+);
+
+// IMPORTANT
+app.use(clerkMiddleware());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 //
 // =======================
-// ✅ FIXED CORS (FULL)
+// CORS
 // =======================
 //
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:3000",
-  process.env.CLIENT_URL, // production frontend (Vercel)
-];
+  "http://localhost:5174",
+  "http://localhost:5175",
+    process.env.CLIENT_URL,
+].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow tools like Postman / server-to-server
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      console.log("❌ Blocked by CORS:", origin);
+      console.log("Blocked by CORS:", origin);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -50,7 +61,6 @@ app.use(
   })
 );
 
-// handle preflight requests
 app.options("*", cors());
 
 //
@@ -58,17 +68,21 @@ app.options("*", cors());
 // BODY PARSER
 // =======================
 //
+
 app.use(express.json());
 
 //
 // =======================
-// MONGO DB CONNECTION
+// MONGODB
 // =======================
 //
+
 const connect = async () => {
   try {
     console.log("MONGO =", process.env.MONGO);
+
     await mongoose.connect(process.env.MONGO);
+
     console.log("Connected to MongoDB");
   } catch (err) {
     console.log("Mongo Error:", err);
@@ -77,9 +91,10 @@ const connect = async () => {
 
 //
 // =======================
-// IMAGEKIT SETUP
+// IMAGEKIT
 // =======================
 //
+
 const imagekit = new ImageKit({
   urlEndpoint: process.env.IMAGE_KIT_ENDPOINT,
   publicKey: process.env.IMAGE_KIT_PUBLIC_KEY,
@@ -96,11 +111,20 @@ app.get("/api/upload", (req, res) => {
 // CREATE CHAT
 // =======================
 //
-app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
-  const userId = req.auth.userId;
-  const { text } = req.body;
 
+app.post("/api/chats", requireAuth(), async (req, res) => {
   try {
+    const { userId } = getAuth(req);
+
+    console.log("USER ID:", userId);
+    console.log("BODY:", req.body);
+
+    if (!userId) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    const { text } = req.body;
+
     const newChat = new Chat({
       userId,
       history: [{ role: "user", parts: [{ text }] }],
@@ -148,11 +172,19 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
 // GET USER CHATS
 // =======================
 //
-app.get("/api/userchats", ClerkExpressRequireAuth(), async (req, res) => {
-  const userId = req.auth.userId;
 
+app.get("/api/userchats", requireAuth(), async (req, res) => {
   try {
+    const { userId } = getAuth(req);
+
+    console.log("USER ID:", userId);
+
+    if (!userId) {
+      return res.status(401).send("Unauthorized");
+    }
+
     const userChats = await UserChats.findOne({ userId });
+
     res.status(200).send(userChats?.chats || []);
   } catch (err) {
     console.log("USERCHATS ERROR:", err);
@@ -165,10 +197,15 @@ app.get("/api/userchats", ClerkExpressRequireAuth(), async (req, res) => {
 // GET SINGLE CHAT
 // =======================
 //
-app.get("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
-  const userId = req.auth.userId;
 
+app.get("/api/chats/:id", requireAuth(), async (req, res) => {
   try {
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      return res.status(401).send("Unauthorized");
+    }
+
     const chat = await Chat.findOne({
       _id: req.params.id,
       userId,
@@ -176,7 +213,7 @@ app.get("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
 
     res.status(200).send(chat);
   } catch (err) {
-    console.log(err);
+    console.log("GET CHAT ERROR:", err);
     res.status(500).send("Error fetching chat!");
   }
 });
@@ -186,30 +223,47 @@ app.get("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
 // UPDATE CHAT
 // =======================
 //
-app.put("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
-  const userId = req.auth.userId;
-  const { question, answer, img } = req.body;
 
-  const newItems = [
-    ...(question
-      ? [{ role: "user", parts: [{ text: question }], ...(img && { img }) }]
-      : []),
-    { role: "model", parts: [{ text: answer }] },
-  ];
-
+app.put("/api/chats/:id", requireAuth(), async (req, res) => {
   try {
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    const { question, answer, img } = req.body;
+
+    const newItems = [
+      ...(question
+        ? [
+            {
+              role: "user",
+              parts: [{ text: question }],
+              ...(img && { img }),
+            },
+          ]
+        : []),
+      {
+        role: "model",
+        parts: [{ text: answer }],
+      },
+    ];
+
     const updatedChat = await Chat.updateOne(
       { _id: req.params.id, userId },
       {
         $push: {
-          history: { $each: newItems },
+          history: {
+            $each: newItems,
+          },
         },
       }
     );
 
     res.status(200).send(updatedChat);
   } catch (err) {
-    console.log(err);
+    console.log("UPDATE CHAT ERROR:", err);
     res.status(500).send("Error adding conversation!");
   }
 });
@@ -219,16 +273,18 @@ app.put("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
 // ERROR HANDLER
 // =======================
 //
+
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("GLOBAL ERROR:", err);
   res.status(401).send("Unauthenticated!");
 });
 
 //
 // =======================
-// SERVE FRONTEND (PROD)
+// FRONTEND BUILD
 // =======================
 //
+
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
 app.get("*", (req, res) => {
@@ -240,6 +296,7 @@ app.get("*", (req, res) => {
 // START SERVER
 // =======================
 //
+
 app.listen(port, () => {
   connect();
   console.log(`Server running on ${port}`);
