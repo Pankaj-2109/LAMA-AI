@@ -1,20 +1,25 @@
 import { IKContext, IKUpload } from "imagekitio-react";
+import { useAuth } from "@clerk/clerk-react";
 
 const urlEndpoint = import.meta.env.VITE_IMAGE_KIT_ENDPOINT;
 const publicKey = import.meta.env.VITE_IMAGE_KIT_PUBLIC_KEY;
 const apiUrl = import.meta.env.VITE_API_URL;
 
-const authenticator = async () => {
-  const res = await fetch(`${apiUrl}/api/upload`, {
-    credentials: "include",
-  });
-
-  if (!res.ok) throw new Error("Auth failed");
-
-  return await res.json();
-};
-
 const Upload = ({ setImg }) => {
+  const { getToken } = useAuth();
+
+  const authenticator = async () => {
+    const token = await getToken();
+    const res = await fetch(`${apiUrl}/api/upload`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Auth failed");
+
+    return await res.json();
+  };
   const onUploadStart = () => {
     setImg((prev) => ({
       ...prev,
