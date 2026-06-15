@@ -12,7 +12,7 @@ const DashboardPage = () => {
   const mutation = useMutation({
     mutationFn: async (text) => {
       const token = await getToken();
-      return fetch(`https://lama-ai-1bq2.onrender.com/api/chats`, {
+      return fetch(`${import.meta.env.VITE_API_URL}/api/chats`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
