@@ -10,7 +10,7 @@ const ChatList = () => {
     queryFn: async () => {
       const token = await getToken();
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/userchats`,
+        `${import.meta.env.VITE_API_URL || "https://lama-ai-1bq2.onrender.com"}/api/userchats`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
