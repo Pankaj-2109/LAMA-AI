@@ -3,7 +3,7 @@ import { useAuth } from "@clerk/clerk-react";
 
 const urlEndpoint = import.meta.env.VITE_IMAGE_KIT_ENDPOINT;
 const publicKey = import.meta.env.VITE_IMAGE_KIT_PUBLIC_KEY;
-const apiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = "https://lama-ai-1bq2.onrender.com";
 
 const Upload = ({ setImg }) => {
   const { getToken } = useAuth();
