@@ -11,7 +11,7 @@ import mongoose from "mongoose";
 import Chat from "./models/chat.js";
 import UserChats from "./models/userChats.js";
 
-import { clerkMiddleware, requireAuth,getAuth } from "@clerk/express";
+import { clerkMiddleware, getAuth } from "@clerk/express";
 
 const port = process.env.PORT || 3000;
 const app = express();
@@ -112,7 +112,7 @@ app.get("/api/upload", (req, res) => {
 // =======================
 //
 
-app.post("/api/chats", requireAuth(), async (req, res) => {
+app.post("/api/chats", async (req, res) => {
   try {
     const { userId } = getAuth(req);
 
@@ -132,33 +132,18 @@ app.post("/api/chats", requireAuth(), async (req, res) => {
 
     const savedChat = await newChat.save();
 
-    const userChats = await UserChats.find({ userId });
-
-    if (!userChats.length) {
-      const newUserChats = new UserChats({
-        userId,
-        chats: [
-          {
+    await UserChats.updateOne(
+      { userId },
+      {
+        $push: {
+          chats: {
             _id: savedChat._id,
             title: text.substring(0, 40),
           },
-        ],
-      });
-
-      await newUserChats.save();
-    } else {
-      await UserChats.updateOne(
-        { userId },
-        {
-          $push: {
-            chats: {
-              _id: savedChat._id,
-              title: text.substring(0, 40),
-            },
-          },
-        }
-      );
-    }
+        },
+      },
+      { upsert: true }
+    );
 
     res.status(201).send(savedChat._id);
   } catch (err) {
@@ -173,7 +158,7 @@ app.post("/api/chats", requireAuth(), async (req, res) => {
 // =======================
 //
 
-app.get("/api/userchats", requireAuth(), async (req, res) => {
+app.get("/api/userchats", async (req, res) => {
   try {
     const { userId } = getAuth(req);
 
@@ -198,7 +183,7 @@ app.get("/api/userchats", requireAuth(), async (req, res) => {
 // =======================
 //
 
-app.get("/api/chats/:id", requireAuth(), async (req, res) => {
+app.get("/api/chats/:id", async (req, res) => {
   try {
     const { userId } = getAuth(req);
 
@@ -224,7 +209,7 @@ app.get("/api/chats/:id", requireAuth(), async (req, res) => {
 // =======================
 //
 
-app.put("/api/chats/:id", requireAuth(), async (req, res) => {
+app.put("/api/chats/:id", async (req, res) => {
   try {
     const { userId } = getAuth(req);
 
@@ -235,7 +220,7 @@ app.put("/api/chats/:id", requireAuth(), async (req, res) => {
     const { question, answer, img } = req.body;
 
     const newItems = [
-      ...(question
+      ...(question !== null && question !== undefined
         ? [
             {
               role: "user",
@@ -250,7 +235,7 @@ app.put("/api/chats/:id", requireAuth(), async (req, res) => {
       },
     ];
 
-    const updatedChat = await Chat.updateOne(
+    const updatedChat = await Chat.findOneAndUpdate(
       { _id: req.params.id, userId },
       {
         $push: {
@@ -258,7 +243,8 @@ app.put("/api/chats/:id", requireAuth(), async (req, res) => {
             $each: newItems,
           },
         },
-      }
+      },
+      { new: true }
     );
 
     res.status(200).send(updatedChat);
@@ -301,3 +287,4 @@ app.listen(port, () => {
   connect();
   console.log(`Server running on ${port}`);
 });
+// Nodemon reload trigger

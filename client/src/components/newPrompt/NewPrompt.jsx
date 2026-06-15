@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./newPrompt.css";
 import Upload from "../upload/Upload";
 import { IKImage } from "imagekitio-react";
@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 const NewPrompt = ({ data }) => {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
   const [img, setImg] = useState({
     isLoading: false,
@@ -20,22 +21,7 @@ const NewPrompt = ({ data }) => {
   const formRef = useRef(null);
   const queryClient = useQueryClient();
 
-  // Stable chat history
-  const chatHistory = useMemo(() => {
-    return (
-      data?.history?.map(({ role, parts }) => ({
-        role,
-        parts: [{ text: parts?.[0]?.text || "" }],
-      })) || []
-    );
-  }, [data?.history]);
 
-  // Stable Gemini session
-  const chat = useMemo(() => {
-    return model.startChat({
-      history: chatHistory,
-    });
-  }, [chatHistory]);
 
   // Auto-scroll like ChatGPT
   useEffect(() => {
@@ -63,95 +49,102 @@ const NewPrompt = ({ data }) => {
       return res.json();
     },
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chat", data._id] });
+    onSuccess: (newChatData) => {
+      queryClient.setQueryData(["chat", data._id], newChatData);
       setMessages([]);
       setImg({ isLoading: false, dbData: {}, aiData: {} });
     },
   });
 
-  // 🚀 CHATGPT-STYLE ADD FUNCTION
-  const add = async (text) => {
-    if (!text.trim() || isThinking) return;
+  const hasTriggeredRef = useRef(null);
 
-    const userMessage = text;
+  // Consolidated response generator
+  const generateResponse = async (text, isAuto = false) => {
+    if ((!text?.trim() && !img.dbData?.filePath) || isThinking) return;
 
     setIsThinking(true);
 
-    // Add user + empty assistant message
-    const updated = [
-      ...messages,
-      { role: "user", content: userMessage },
-      { role: "assistant", content: "" },
-    ];
-
-    setMessages(updated);
+    if (isAuto) {
+      setMessages([{ role: "assistant", content: "" }]);
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        { 
+          role: "user", 
+          content: text, 
+          img: img.dbData?.filePath || null 
+        },
+        { role: "assistant", content: "" },
+      ]);
+    }
 
     try {
-      const result = await chat.sendMessageStream(
-        Object.keys(img.aiData || {}).length
-          ? [img.aiData, userMessage]
-          : [userMessage]
-      );
+      const history = data?.history || [];
+      const baseHistory = isAuto ? history.slice(0, -1) : history;
+      
+      const chatHistory = baseHistory.map(({ role, parts }) => ({
+        role,
+        parts: [{ text: parts?.[0]?.text || "" }],
+      }));
+
+      const chat = model.startChat({ history: chatHistory });
+
+      const messageParts = Object.keys(img.aiData || {}).length
+        ? (text?.trim() ? [img.aiData, text] : [img.aiData])
+        : [text];
+
+      const result = await chat.sendMessageStream(messageParts);
 
       let fullText = "";
 
       for await (const chunk of result.stream) {
         fullText += chunk.text();
 
-        setMessages((prev) => {
-          const copy = [...prev];
-          copy[copy.length - 1] = {
-            role: "assistant",
-            content: fullText,
-          };
-          return copy;
-        });
+        setMessages((prev) => [
+          ...prev.slice(0, -1),
+          { role: "assistant", content: fullText },
+        ]);
       }
 
       mutation.mutate({
-        question: userMessage,
+        question: isAuto ? null : text,
         answer: fullText,
       });
 
     } catch (err) {
-      setMessages((prev) => {
-        const copy = [...prev];
-        copy[copy.length - 1] = {
-          role: "assistant",
-          content: "❌ " + (err.message || "Error"),
-        };
-        return copy;
-      });
+      setMessages((prev) => [
+        ...prev.slice(0, -1),
+        { role: "assistant", content: "❌ " + (err.message || "Error") },
+      ]);
     } finally {
       setIsThinking(false);
     }
   };
 
+  // Auto-respond to the first message if no assistant response exists
+  useEffect(() => {
+    const history = data?.history || [];
+    if (history.length > 0 && history[history.length - 1].role === "user") {
+      const triggerKey = `${data._id}_${history.length}`;
+      if (hasTriggeredRef.current !== triggerKey) {
+        hasTriggeredRef.current = triggerKey;
+        const lastMsg = history[history.length - 1];
+        generateResponse(lastMsg.parts?.[0]?.text || "", true);
+      }
+    }
+  }, [data]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const text = e.target.chat_input.value;
-    if (!text.trim()) return;
-
-    add(text);
-    formRef.current?.reset();
+    const text = inputValue;
+    const hasImage = !!img.dbData?.filePath;
+    if (!text.trim() && !hasImage) return;
+    generateResponse(text);
+    setInputValue("");
   };
 
   return (
     <div className="chatContainer">
-
-      {/* IMAGE PREVIEW */}
-      {img.isLoading && (
-        <div className="message ai">Uploading image...</div>
-      )}
-
-      {img.dbData?.filePath && (
-        <IKImage
-          urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
-          path={img.dbData.filePath}
-          width="320"
-        />
-      )}
 
       {/* CHAT MESSAGES (CHATGPT STYLE) */}
       {messages.map((msg, i) => (
@@ -159,8 +152,20 @@ const NewPrompt = ({ data }) => {
           key={i}
           className={`message ${msg.role === "user" ? "user" : "ai"}`}
         >
+          {msg.role === "user" && msg.img && (
+            <IKImage
+              urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
+              path={msg.img}
+              width="240"
+              style={{ display: "block", borderRadius: "12px", marginBottom: "8px" }}
+            />
+          )}
           {msg.role === "assistant" ? (
-            <Markdown>{msg.content}</Markdown>
+            msg.content ? (
+              <Markdown>{msg.content}</Markdown>
+            ) : (
+              <span className="thinkingText">Thinking...</span>
+            )
           ) : (
             msg.content
           )}
@@ -176,22 +181,54 @@ const NewPrompt = ({ data }) => {
         ref={formRef}
         autoComplete="off"
       >
-        <input type="text" name="fake1" style={{ display: "none" }} />
-        <input type="password" name="fake2" style={{ display: "none" }} />
+        {/* IMAGE PREVIEW IN THE CAPSULE */}
+        {(img.isLoading || img.dbData?.filePath) && (
+          <div className="imagePreviewArea">
+            {img.isLoading ? (
+              <div className="imagePreviewLoading">
+                <span>Uploading...</span>
+              </div>
+            ) : (
+              <div className="imagePreviewWrapper">
+                <IKImage
+                  urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
+                  path={img.dbData.filePath}
+                  width="60"
+                  height="60"
+                />
+                <button
+                  type="button"
+                  className="removeImageBtn"
+                  onClick={() => setImg({ isLoading: false, dbData: {}, aiData: {} })}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-        <Upload setImg={setImg} />
+        <div className="inputContainer">
+          <Upload setImg={setImg} />
 
-        <input
-          type="text"
-          name="chat_input"
-          placeholder={isThinking ? "Thinking..." : "Ask me anything..."}
-          autoComplete="off"
-          disabled={isThinking}
-        />
+          <input
+            type="text"
+            name="chat_input"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={isThinking ? "Thinking..." : "Ask me anything..."}
+            autoComplete="off"
+            disabled={isThinking}
+          />
 
-        <button type="submit" disabled={isThinking}>
-          <img src="/arrow.png" alt="Send" />
-        </button>
+          <button
+            type="submit"
+            disabled={isThinking || (!inputValue.trim() && !img.dbData?.filePath)}
+            className={(inputValue.trim() || img.dbData?.filePath) ? "glow" : ""}
+          >
+            <img src="/arrow.png" alt="Send" />
+          </button>
+        </div>
       </form>
     </div>
   );

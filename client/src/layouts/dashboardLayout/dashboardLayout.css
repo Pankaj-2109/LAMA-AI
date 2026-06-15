@@ -1,15 +1,25 @@
 .dashboardLayout {
   display: flex;
-  gap: 50px;
-  padding-top: 20px;
+  gap: 24px;
   height: 100%;
+  padding: 8px 0;
+  box-sizing: border-box;
+}
 
-  .menu {
-    flex: 1;
-  }
+.dashboardLayout .menu {
+  flex: 1;
+  min-width: 240px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+}
 
-  .content {
-    flex: 4;
-    background-color: #12101b;
-  }
+.dashboardLayout .content {
+  flex: 4;
+  background-color: #12101b; /* Color remains the same */
+  border-radius: 24px; /* Premium ChatGPT-style rounded panel */
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: relative;
 }
