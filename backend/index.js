@@ -255,18 +255,6 @@ app.put("/api/chats/:id", async (req, res) => {
   }
 });
 
-app.get("/api/debug-env", (req, res) => {
-  res.json({
-    CLERK_SECRET_KEY_EXISTS: !!process.env.CLERK_SECRET_KEY,
-    CLERK_SECRET_KEY_PREFIX: process.env.CLERK_SECRET_KEY ? process.env.CLERK_SECRET_KEY.slice(0, 7) : null,
-    CLERK_PUBLISHABLE_KEY_EXISTS: !!process.env.CLERK_PUBLISHABLE_KEY,
-    MONGO_EXISTS: !!process.env.MONGO,
-    MONGO_VALUE: process.env.MONGO ? process.env.MONGO.slice(0, 15) + "..." : null,
-    MONGO_CONNECTED: mongoose.connection.readyState === 1,
-    PORT: port,
-  });
-});
-
 //
 // =======================
 // ERROR HANDLER
