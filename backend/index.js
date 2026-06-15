@@ -40,7 +40,8 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
-    process.env.CLIENT_URL,
+  "https://lama-ai-client1.vercel.app",
+  process.env.CLIENT_URL,
 ].filter(Boolean);
 
 app.use(
