@@ -32,12 +32,15 @@ app.use(
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      // Allow if it is in whitelisted list or ends with .vercel.app (handles Vercel branch preview URLs)
+      const isAllowed = allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes(".vercel.app");
+
+      if (isAllowed) {
         return callback(null, true);
       }
 
       console.log("Blocked by CORS:", origin);
-      return callback(new Error("Not allowed by CORS"));
+      return callback(null, false); // Reject origin gracefully without throwing Express middleware error
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
