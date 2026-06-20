@@ -151,7 +151,7 @@ app.post("/api/chats", async (req, res) => {
     res.status(201).send(savedChat._id);
   } catch (err) {
     console.log("CHAT ERROR:", err);
-    res.status(500).send("Error creating chat!");
+    res.status(500).send("Error creating chat: " + err.message);
   }
 });
 
@@ -176,7 +176,7 @@ app.get("/api/userchats", async (req, res) => {
     res.status(200).send(userChats?.chats || []);
   } catch (err) {
     console.log("USERCHATS ERROR:", err);
-    res.status(500).send("Error fetching userchats!");
+    res.status(500).send("Error fetching userchats: " + err.message);
   }
 });
 
@@ -202,7 +202,7 @@ app.get("/api/chats/:id", async (req, res) => {
     res.status(200).send(chat);
   } catch (err) {
     console.log("GET CHAT ERROR:", err);
-    res.status(500).send("Error fetching chat!");
+    res.status(500).send("Error fetching chat: " + err.message);
   }
 });
 
@@ -253,7 +253,7 @@ app.put("/api/chats/:id", async (req, res) => {
     res.status(200).send(updatedChat);
   } catch (err) {
     console.log("UPDATE CHAT ERROR:", err);
-    res.status(500).send("Error adding conversation!");
+    res.status(500).send("Error adding conversation: " + err.message);
   }
 });
 
