@@ -2,15 +2,24 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import "./dashboardPage.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
+import { useState } from "react";
+import Upload from "../../components/upload/Upload";
+import { IKImage } from "imagekitio-react";
 
 const DashboardPage = () => {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
-
   const navigate = useNavigate();
 
+  const [text, setText] = useState("");
+  const [img, setImg] = useState({
+    isLoading: false,
+    dbData: {},
+    aiData: {},
+  });
+
   const mutation = useMutation({
-    mutationFn: async (text) => {
+    mutationFn: async ({ text, img }) => {
       const token = await getToken();
       return fetch(`${import.meta.env.VITE_API_URL || "https://lama-ai-1bq2.onrender.com"}/api/chats`, {
         method: "POST",
@@ -18,11 +27,10 @@ const DashboardPage = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, img }),
       }).then((res) => res.json());
     },
     onSuccess: (id) => {
-      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["userChats"] });
       navigate(`/dashboard/chats/${id}`);
     },
@@ -30,11 +38,11 @@ const DashboardPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const text = e.target.text.value;
-    if (!text) return;
+    if (!text.trim() && !img.dbData?.filePath) return;
 
-    mutation.mutate(text);
+    mutation.mutate({ text, img: img.dbData?.filePath || null });
   };
+
   return (
     <div className="dashboardPage">
       <div className="texts">
@@ -58,11 +66,48 @@ const DashboardPage = () => {
         </div>
       </div>
       <div className="formContainer">
-        <form onSubmit={handleSubmit}>
-          <input type="text" name="text" placeholder="Ask me anything..." />
-          <button>
-            <img src="/arrow.png" alt="" />
-          </button>
+        <form onSubmit={handleSubmit} autoComplete="off">
+          {/* IMAGE PREVIEW IN THE CAPSULE */}
+          {(img.isLoading || img.dbData?.filePath) && (
+            <div className="imagePreviewArea">
+              {img.isLoading ? (
+                <div className="imagePreviewLoading">
+                  <span>Uploading...</span>
+                </div>
+              ) : (
+                <div className="imagePreviewWrapper">
+                  <IKImage
+                    urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
+                    path={img.dbData.filePath}
+                    width="60"
+                    height="60"
+                  />
+                  <button
+                    type="button"
+                    className="removeImageBtn"
+                    onClick={() => setImg({ isLoading: false, dbData: {}, aiData: {} })}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="inputContainer">
+            <Upload setImg={setImg} />
+            <input
+              type="text"
+              name="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Ask me anything..."
+              autoComplete="off"
+            />
+            <button disabled={mutation.isPending || img.isLoading || (!text.trim() && !img.dbData?.filePath)}>
+              <img src="/arrow.png" alt="" />
+            </button>
+          </div>
         </form>
       </div>
     </div>

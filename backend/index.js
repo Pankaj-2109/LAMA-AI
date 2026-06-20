@@ -145,11 +145,17 @@ app.post("/api/chats", async (req, res) => {
       return res.status(401).send("Unauthorized");
     }
 
-    const { text } = req.body;
+    const { text, img } = req.body;
 
     const newChat = new Chat({
       userId,
-      history: [{ role: "user", parts: [{ text }] }],
+      history: [
+        {
+          role: "user",
+          parts: [{ text }],
+          ...(img && { img }),
+        },
+      ],
     });
 
     const savedChat = await newChat.save();

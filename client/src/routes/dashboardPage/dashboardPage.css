@@ -115,66 +115,156 @@
 .dashboardPage .formContainer {
   width: 70%;
   max-width: 900px;
-
   margin-bottom: 30px;
-
   background: #2c2937;
   border-radius: 30px;
-
   padding: 8px 10px;
 }
 
 .dashboardPage .formContainer form {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
 
+.dashboardPage .formContainer form .inputContainer {
   display: flex;
   align-items: center;
   gap: 15px;
+  width: 100%;
 }
 
 .dashboardPage .formContainer form input {
   flex: 1;
-
   background: transparent;
   border: none;
   outline: none;
-
   color: white;
   font-size: 16px;
-
-  padding: 15px;
+  padding: 10px 0;
 }
 
 .dashboardPage .formContainer form input::placeholder {
   color: #9b9b9b;
 }
 
-.dashboardPage .formContainer form button {
+/* Styled specifically for upload button */
+.dashboardPage .formContainer form label {
   width: 42px;
   height: 42px;
-
-  border: none;
   border-radius: 50%;
-
-  background: white;
-
+  background-color: rgba(255, 255, 255, 0.05);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-
   cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
 
+.dashboardPage .formContainer form label:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.dashboardPage .formContainer form label img {
+  width: 18px;
+  height: 18px;
+}
+
+.dashboardPage .formContainer form button {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   transition: 0.2s;
 }
 
-.dashboardPage .formContainer form button:hover {
+.dashboardPage .formContainer form button:hover:not(:disabled) {
   transform: scale(1.05);
+}
+
+.dashboardPage .formContainer form button:disabled {
+  background: rgba(255, 255, 255, 0.25);
+  cursor: default;
 }
 
 .dashboardPage .formContainer form button img {
   width: 18px;
   height: 18px;
   filter: invert(1);
+  transition: opacity 0.3s ease;
+}
+
+.dashboardPage .formContainer form button:disabled img {
+  opacity: 0.5;
+}
+
+/* Image preview section matching chat page */
+.dashboardPage .formContainer .imagePreviewArea {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dashboardPage .formContainer .imagePreviewWrapper {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 56px;
+}
+
+.dashboardPage .formContainer .imagePreviewWrapper img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dashboardPage .formContainer .removeImageBtn {
+  position: absolute !important;
+  top: -6px;
+  right: -6px;
+  width: 18px !important;
+  height: 18px !important;
+  background-color: #ef4444 !important;
+  color: white !important;
+  border-radius: 50% !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 9px !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  opacity: 1 !important;
+}
+
+.dashboardPage .formContainer .removeImageBtn:hover {
+  background-color: #dc2626 !important;
+  transform: scale(1.1);
+}
+
+.dashboardPage .formContainer .imagePreviewLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  font-size: 9px;
+  color: #888899;
 }
 
 @media (max-width: 1024px) {
@@ -231,5 +321,17 @@
   .dashboardPage .texts .options .option img {
     width: 32px;
     height: 32px;
+  }
+
+  .dashboardPage .formContainer form label,
+  .dashboardPage .formContainer form button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .dashboardPage .formContainer form label img,
+  .dashboardPage .formContainer form button img {
+    width: 16px;
+    height: 16px;
   }
 }
