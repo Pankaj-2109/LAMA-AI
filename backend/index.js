@@ -90,6 +90,8 @@ const connect = async () => {
   }
 };
 
+connect(); // Call connect immediately at load time for serverless runtime
+
 //
 // =======================
 // IMAGEKIT
