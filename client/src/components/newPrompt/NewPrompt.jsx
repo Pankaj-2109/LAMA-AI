@@ -3,13 +3,11 @@ import "./newPrompt.css";
 import Upload from "../upload/Upload";
 import { IKImage } from "imagekitio-react";
 import model from "../../lib/gemini";
-import Markdown from "react-markdown";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
 
-const NewPrompt = ({ data }) => {
+const NewPrompt = ({ data, setMessages }) => {
   const { getToken } = useAuth();
-  const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
@@ -19,16 +17,8 @@ const NewPrompt = ({ data }) => {
     aiData: {},
   });
 
-  const endRef = useRef(null);
   const formRef = useRef(null);
   const queryClient = useQueryClient();
-
-
-
-  // Auto-scroll like ChatGPT
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   // Save chat
   const mutation = useMutation({
@@ -150,93 +140,61 @@ const NewPrompt = ({ data }) => {
   };
 
   return (
-    <div className="chatContainer">
-
-      {/* CHAT MESSAGES (CHATGPT STYLE) */}
-      {messages.map((msg, i) => (
-        <div
-          key={i}
-          className={`message ${msg.role === "user" ? "user" : "ai"}`}
-        >
-          {msg.role === "user" && msg.img && (
-            <IKImage
-              urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
-              path={msg.img}
-              width="240"
-              style={{ display: "block", borderRadius: "12px", marginBottom: "8px" }}
-            />
-          )}
-          {msg.role === "assistant" ? (
-            msg.content ? (
-              <Markdown>{msg.content}</Markdown>
-            ) : (
-              <span className="thinkingText">Thinking...</span>
-            )
+    <form
+      className="newForm"
+      onSubmit={handleSubmit}
+      ref={formRef}
+      autoComplete="off"
+    >
+      {/* IMAGE PREVIEW IN THE CAPSULE */}
+      {(img.isLoading || img.dbData?.filePath) && (
+        <div className="imagePreviewArea">
+          {img.isLoading ? (
+            <div className="imagePreviewLoading">
+              <span>Uploading...</span>
+            </div>
           ) : (
-            msg.content
+            <div className="imagePreviewWrapper">
+              <IKImage
+                urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
+                path={img.dbData.filePath}
+                width="60"
+                height="60"
+              />
+              <button
+                type="button"
+                className="removeImageBtn"
+                onClick={() => setImg({ isLoading: false, dbData: {}, aiData: {} })}
+              >
+                ✕
+              </button>
+            </div>
           )}
         </div>
-      ))}
+      )}
 
-      <div ref={endRef} />
+      <div className="inputContainer">
+        <Upload setImg={setImg} />
 
-      {/* INPUT BAR */}
-      <form
-        className="newForm"
-        onSubmit={handleSubmit}
-        ref={formRef}
-        autoComplete="off"
-      >
-        {/* IMAGE PREVIEW IN THE CAPSULE */}
-        {(img.isLoading || img.dbData?.filePath) && (
-          <div className="imagePreviewArea">
-            {img.isLoading ? (
-              <div className="imagePreviewLoading">
-                <span>Uploading...</span>
-              </div>
-            ) : (
-              <div className="imagePreviewWrapper">
-                <IKImage
-                  urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
-                  path={img.dbData.filePath}
-                  width="60"
-                  height="60"
-                />
-                <button
-                  type="button"
-                  className="removeImageBtn"
-                  onClick={() => setImg({ isLoading: false, dbData: {}, aiData: {} })}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        <input
+          type="text"
+          name="chat_input"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder={isThinking ? "Thinking..." : "Ask me anything..."}
+          autoComplete="off"
+          disabled={isThinking}
+        />
 
-        <div className="inputContainer">
-          <Upload setImg={setImg} />
-
-          <input
-            type="text"
-            name="chat_input"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={isThinking ? "Thinking..." : "Ask me anything..."}
-            autoComplete="off"
-            disabled={isThinking}
-          />
-
-          <button
-            type="submit"
-            disabled={isThinking || (!inputValue.trim() && !img.dbData?.filePath)}
-            className={(inputValue.trim() || img.dbData?.filePath) ? "glow" : ""}
-          >
-            <img src="/arrow.png" alt="Send" />
-          </button>
-        </div>
-      </form>
-    </div>
+        <button
+          type="submit"
+          disabled={isThinking || (!inputValue.trim() && !img.dbData?.filePath)}
+          className={(inputValue.trim() || img.dbData?.filePath) ? "glow" : ""}
+        >
+          <img src="/arrow.png" alt="Send" />
+        </button>
+      </div>
+    </form>
   );
 };
 

@@ -5,11 +5,15 @@ import { useLocation } from "react-router-dom";
 import Markdown from "react-markdown";
 import { IKImage } from "imagekitio-react";
 import { useAuth } from "@clerk/clerk-react";
+import { useState, useEffect, useRef } from "react";
 
 const ChatPage = () => {
   const { getToken } = useAuth();
   const path = useLocation().pathname;
   const chatId = path.split("/").pop();
+
+  const [messages, setMessages] = useState([]);
+  const endRef = useRef(null);
 
   const { isPending, error, data } = useQuery({
     queryKey: ["chat", chatId],
@@ -30,11 +34,15 @@ const ChatPage = () => {
 
       return res.json();
     },
-    // Keep internal configurations sharp for dynamic paths
     staleTime: 0,
-    gcTime: 0, // Prevents layout ghosting across separate open tabs
+    gcTime: 0,
     refetchOnMount: "always",
   });
+
+  // Auto-scroll like ChatGPT when history or active streaming messages update
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [data, messages]);
 
   return (
     <div className="chatPage">
@@ -80,10 +88,56 @@ const ChatPage = () => {
               </div>
             ))}
 
-          {/* Render new input form once base metadata completes validation loading */}
-          {data && <NewPrompt data={data} />}
+          {/* Render active streaming messages */}
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={
+                msg.role === "user"
+                  ? "messageWrapper userWrapper"
+                  : "messageWrapper aiWrapper"
+              }
+            >
+              {msg.role === "user" && msg.img && (
+                <IKImage
+                  urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
+                  path={msg.img}
+                  width="240"
+                  style={{ display: "block", borderRadius: "12px", marginBottom: "8px" }}
+                />
+              )}
+              <div
+                className={
+                  msg.role === "user"
+                    ? "message user"
+                    : "message"
+                }
+              >
+                {msg.role === "assistant" ? (
+                  msg.content ? (
+                    <Markdown>{msg.content}</Markdown>
+                  ) : (
+                    <span className="thinkingText">Thinking...</span>
+                  )
+                ) : (
+                  msg.content
+                )}
+              </div>
+            </div>
+          ))}
+
+          <div ref={endRef} />
         </div>
       </div>
+
+      {/* Render input form outside the scroll wrapper at the bottom of the page */}
+      {data && (
+        <NewPrompt
+          data={data}
+          messages={messages}
+          setMessages={setMessages}
+        />
+      )}
     </div>
   );
 };
