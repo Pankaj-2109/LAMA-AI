@@ -78,19 +78,38 @@ app.use(express.json());
 // =======================
 //
 
+let isConnected = false;
+
 const connect = async () => {
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
   try {
-    console.log("MONGO =", process.env.MONGO);
-
+    console.log("MONGO =", process.env.MONGO ? "Defined" : "MISSING");
+    if (!process.env.MONGO) {
+      throw new Error("MONGO environment variable is not defined");
+    }
     await mongoose.connect(process.env.MONGO);
-
+    isConnected = true;
     console.log("Connected to MongoDB");
   } catch (err) {
     console.log("Mongo Error:", err);
+    throw err;
   }
 };
 
-connect(); // Call connect immediately at load time for serverless runtime
+// Database connection middleware
+app.use(async (req, res, next) => {
+  // Skip DB connection for static files if any, but run for APIs
+  if (req.path.startsWith("/api")) {
+    try {
+      await connect();
+    } catch (err) {
+      return res.status(500).send("Database connection error: " + err.message);
+    }
+  }
+  next();
+});
 
 //
 // =======================
@@ -225,12 +244,12 @@ app.put("/api/chats/:id", async (req, res) => {
     const newItems = [
       ...(question !== null && question !== undefined
         ? [
-            {
-              role: "user",
-              parts: [{ text: question }],
-              ...(img && { img }),
-            },
-          ]
+          {
+            role: "user",
+            parts: [{ text: question }],
+            ...(img && { img }),
+          },
+        ]
         : []),
       {
         role: "model",
