@@ -16,26 +16,9 @@ import { clerkMiddleware, getAuth } from "@clerk/express";
 const port = process.env.PORT || 3000;
 const app = express();
 
-// DEBUG
-console.log(
-  "CLERK_SECRET_KEY:",
-  process.env.CLERK_SECRET_KEY
-    ? process.env.CLERK_SECRET_KEY.slice(0, 10) + "..."
-    : "MISSING"
-);
-
-// IMPORTANT
-app.use(clerkMiddleware());
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-//
 // =======================
-// CORS
+// CORS (MUST BE FIRST)
 // =======================
-//
-
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
@@ -63,6 +46,20 @@ app.use(
 );
 
 app.options("*", cors());
+
+// DEBUG
+console.log(
+  "CLERK_SECRET_KEY:",
+  process.env.CLERK_SECRET_KEY
+    ? process.env.CLERK_SECRET_KEY.slice(0, 10) + "..."
+    : "MISSING"
+);
+
+// IMPORTANT
+app.use(clerkMiddleware());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 //
 // =======================
