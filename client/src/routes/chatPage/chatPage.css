@@ -151,12 +151,16 @@
 /* Images kits standard styling */
 .chatPage .wrapper .chat img {
   border-radius: 12px;
-  max-width: 100%;
-  height: auto;
+  max-width: 100% !important;
+  height: auto !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 768px) {
+  .chatPage {
+    padding-top: 72px; /* Spacer for the mobile hamburger button */
+  }
+
   .chatPage .wrapper .chat {
     width: 90%;
     gap: 24px;

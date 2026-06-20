@@ -23,3 +23,114 @@
   overflow: hidden;
   position: relative;
 }
+
+/* Hide mobile-specific drawer controls on desktop */
+.toggleMenuBtn,
+.closeMenuBtn,
+.menuBackdrop {
+  display: none;
+}
+
+/* Tablet & Mobile Responsiveness Breakpoint */
+@media screen and (max-width: 768px) {
+  .dashboardLayout {
+    gap: 0;
+    padding: 0;
+  }
+
+  /* Make menu slide-out drawer */
+  .dashboardLayout .menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 80%;
+    height: 100dvh;
+    background-color: #0e0c16;
+    z-index: 1000;
+    padding: 24px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .dashboardLayout.menuOpen .menu {
+    transform: translateX(0);
+  }
+
+  .dashboardLayout.menuOpen .menu .chatList {
+    padding-top: 40px; /* Make space for close button */
+  }
+
+  /* Show and style close button */
+  .closeMenuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #ececec;
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001;
+    transition: all 0.2s ease;
+  }
+
+  .closeMenuBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Show and style overlay backdrop */
+  .menuBackdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+  }
+
+  /* Content area takes up full screen */
+  .dashboardLayout .content {
+    flex: 1;
+    width: 100%;
+    border-radius: 16px; /* Slightly smaller border-radius on mobile */
+  }
+
+  /* Show and style hamburger menu button */
+  .toggleMenuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #ececec;
+    cursor: pointer;
+    z-index: 99;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+  }
+
+  .toggleMenuBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+}
+

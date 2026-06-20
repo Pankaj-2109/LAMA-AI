@@ -1,6 +1,6 @@
 .rootLayout {
   padding: 16px 64px;
-  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile browsers */
   display: flex;
   flex-direction: column;
 
@@ -27,3 +27,17 @@
     overflow: hidden;
   }
 }
+
+/* Responsive padding adjustments */
+@media screen and (max-width: 1024px) {
+  .rootLayout {
+    padding: 16px 32px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .rootLayout {
+    padding: 16px 16px;
+  }
+}
+

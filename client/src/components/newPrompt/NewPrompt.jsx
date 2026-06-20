@@ -35,10 +35,10 @@ const NewPrompt = ({ data }) => {
     mutationFn: async ({ question, answer }) => {
       const token = await getToken();
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "https://lama-ai-1bq2.onrender.com"}/api/chats/${data._id}`,
+        `${import.meta.env.VITE_API_URL}/api/chats/${data._id}`,
         {
           method: "PUT",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
@@ -74,10 +74,10 @@ const NewPrompt = ({ data }) => {
     } else {
       setMessages((prev) => [
         ...prev,
-        { 
-          role: "user", 
-          content: text, 
-          img: img.dbData?.filePath || null 
+        {
+          role: "user",
+          content: text,
+          img: img.dbData?.filePath || null
         },
         { role: "assistant", content: "" },
       ]);
@@ -86,7 +86,7 @@ const NewPrompt = ({ data }) => {
     try {
       const history = data?.history || [];
       const baseHistory = isAuto ? history.slice(0, -1) : history;
-      
+
       const chatHistory = baseHistory.map(({ role, parts }) => ({
         role,
         parts: [{ text: parts?.[0]?.text || "" }],
@@ -137,6 +137,7 @@ const NewPrompt = ({ data }) => {
         generateResponse(lastMsg.parts?.[0]?.text || "", true);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   const handleSubmit = (e) => {

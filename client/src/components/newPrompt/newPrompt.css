@@ -244,3 +244,36 @@
     bottom: 16px;
   }
 }
+
+@media (max-width: 768px) {
+  .newForm {
+    width: calc(100% - 32px);
+    bottom: 12px;
+    padding: 8px 10px 8px 14px;
+    gap: 6px;
+  }
+
+  .newForm .inputContainer {
+    gap: 8px;
+  }
+
+  .newForm input[type="text"] {
+    font-size: 14px;
+  }
+
+  .newForm label,
+  .newForm button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .newForm button img,
+  .newForm label img {
+    width: 14px;
+    height: 14px;
+  }
+
+  .newForm label::after {
+    display: none; /* Hide hover tooltips on mobile/touch screens */
+  }
+}
