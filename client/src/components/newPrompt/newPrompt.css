@@ -20,6 +20,7 @@
   box-sizing: border-box;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  z-index: 10; /* Set z-index to stay above the fading gradient */
 }
 
 .newForm:focus-within {
