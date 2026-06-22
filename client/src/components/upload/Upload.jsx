@@ -20,6 +20,27 @@ const Upload = ({ setImg }) => {
 
     return await res.json();
   };
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // Split off the base64 URL prefix (e.g., "data:image/png;base64,") to get raw base64 string
+      const base64Data = reader.result.split(",")[1];
+      setImg((prev) => ({
+        ...prev,
+        aiData: {
+          inlineData: {
+            data: base64Data,
+            mimeType: file.type,
+          },
+        },
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const onUploadStart = () => {
     setImg((prev) => ({
       ...prev,
@@ -35,12 +56,6 @@ const Upload = ({ setImg }) => {
       ...prev,
       isLoading: false,
       dbData: res,
-      aiData: {
-        inlineData: {
-          data: res.filePath,
-          mimeType: res.fileType || "image/png",
-        },
-      },
     }));
   };
 
@@ -71,6 +86,7 @@ const Upload = ({ setImg }) => {
           onUploadStart={onUploadStart}
           onSuccess={onSuccess}
           onError={onError}
+          onChange={handleFileChange}
           style={{
             position: "absolute",
             opacity: 0,
