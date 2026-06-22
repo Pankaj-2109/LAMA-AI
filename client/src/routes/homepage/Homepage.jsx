@@ -4,7 +4,7 @@ import { TypeAnimation } from "react-type-animation";
 import { useState } from "react";
 
 const Homepage = () => {
-  const [typingStatus, setTypingStatus] = useState("human1");
+  const [typingStatus, setTypingStatus] = useState("frank");
 
   return (
     <div className="homepage">
@@ -27,9 +27,9 @@ const Homepage = () => {
           <div className="chat">
             <img
               src={
-                typingStatus === "human1"
+                typingStatus === "frank"
                   ? "/human1.jpeg"
-                  : typingStatus === "human2"
+                  : typingStatus === "clara"
                   ? "/human2.jpeg"
                   : "bot.png"
               }
@@ -38,7 +38,7 @@ const Homepage = () => {
             <TypeAnimation
               sequence={[
                 // Same substring at the start will only be typed out once, initially
-                "Human1:We produce food for Mice",
+                "Frank:We produce food for Mice",
                 2000,
                 () => {
                   setTypingStatus("bot");
@@ -46,9 +46,9 @@ const Homepage = () => {
                 "Bot:We produce food for Hamsters",
                 2000,
                 () => {
-                  setTypingStatus("human2");
+                  setTypingStatus("clara");
                 },
-                "Human2:We produce food for Guinea Pigs",
+                "Clara:We produce food for Guinea Pigs",
                 2000,
                 () => {
                   setTypingStatus("bot");
@@ -56,7 +56,7 @@ const Homepage = () => {
                 "Bot:We produce food for Chinchillas",
                 2000,
                 () => {
-                  setTypingStatus("human1");
+                  setTypingStatus("frank");
                 },
               ]}
               wrapper="span"
