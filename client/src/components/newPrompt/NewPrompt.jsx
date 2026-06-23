@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import "./newPrompt.css";
 import Upload from "../upload/Upload";
 import { IKImage } from "imagekitio-react";
-import model from "../../lib/gemini";
+import { generateGeminiStream } from "../../lib/gemini";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/clerk-react";
 
@@ -82,13 +82,11 @@ const NewPrompt = ({ data, setMessages }) => {
         parts: [{ text: parts?.[0]?.text || "" }],
       }));
 
-      const chat = model.startChat({ history: chatHistory });
-
       const messageParts = Object.keys(img.aiData || {}).length
         ? (text?.trim() ? [img.aiData, text] : [img.aiData])
         : [text];
 
-      const result = await chat.sendMessageStream(messageParts);
+      const result = await generateGeminiStream(chatHistory, messageParts);
 
       let fullText = "";
 
